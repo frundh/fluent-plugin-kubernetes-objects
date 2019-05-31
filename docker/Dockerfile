@@ -1,3 +1,11 @@
+FROM circleci/ruby:2.6.1-node-browsers AS build
+COPY . /src
+WORKDIR /src
+
+USER root
+
+RUN .circleci/install_dep.sh && rake build -t -v
+
 FROM ruby:2.5.1-slim
 
 LABEL maintainer="Splunk Inc. <DataEdge@splunk.com>"
@@ -8,11 +16,10 @@ ARG FLUENT_SPLUNK_HEC_GEM_VERSION
 ENV VERSION=${VERSION}
 ENV FLUENT_SPLUNK_HEC_GEM_VERSION=${FLUENT_SPLUNK_HEC_GEM_VERSION}
 
-
 # skip runtime bundler installation
 ENV FLUENTD_DISABLE_BUNDLER_INJECTION 1
 
-COPY *.gem /tmp/
+COPY --from=build /src/pkg/*.gem /tmp
 
 RUN set -e \
  && apt-get update \
@@ -38,7 +45,7 @@ RUN set -e \
 
  # See https://packages.debian.org/stretch/amd64/libjemalloc1/filelist
 ENV LD_PRELOAD "/usr/lib/x86_64-linux-gnu/libjemalloc.so.1"
-COPY entrypoint.sh /fluentd/entrypoint.sh
+COPY docker/entrypoint.sh /fluentd/entrypoint.sh
 
 ENTRYPOINT ["/fluentd/entrypoint.sh"]
 CMD ["-h"]
