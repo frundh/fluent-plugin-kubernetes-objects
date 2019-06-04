@@ -181,7 +181,7 @@ module Fluent::Plugin
 
         version = @storage.get(resource_name)
         o[:resource_version] = version if version
-          create_watcher_thread resource_name, o, watch_interval
+        create_watcher_thread resource_name, o
       end
     end
 
@@ -225,19 +225,20 @@ module Fluent::Plugin
       end
     end
 
-    def create_watcher_thread(object_name, watcher, interval)
-      thread_create(:"watch_#{object_name}") do
-        @client.public_send("watch_#{object_name}", watcher).tap { |watcher|
-          tag = generate_tag "#{object_name}.watch"
-          watcher.each do |entity|
-            log.trace { "Received new object from watching #{object_name}" }
-            entity = JSON.parse(entity)
-            router.emit tag, Fluent::Engine.now, entity
-            @storage.put object_name, entity['object']['metadata']['resourceVersion']
-            sleep(interval)
-          end
-        }
-      end
+    def create_watcher_thread(object_name, object)
+      thread_create(:"watch_#{object_name}") {
+        loop do
+          @client.public_send("watch_#{object_name}", object).tap { |watcher|
+            tag = generate_tag "#{object_name}.watch"
+              watcher.each { |entity|
+                log.trace { "Received new object from watching #{object_name}"}
+                entity = JSON.parse(entity)
+                router.emit tag, Fluent::Engine.now, entity
+                @storage.put object_name, entity['object']['metadata']['resourceVersion']
+            }
+          }
+        end
+      }
     end
   end
 end
