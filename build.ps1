@@ -1,1 +1,1 @@
-docker build -f .\docker\Dockerfile --build-arg VERSION=1.1.2 --build-arg FLUENT_SPLUNK_HEC_GEM_VERSION=1.1.0 -t splunk/fluent-plugin-kubernetes-objects:1.1.2-b3a06b9 .
+docker build -f .\docker\Dockerfile --build-arg VERSION=1.1.0 --build-arg FLUENT_SPLUNK_HEC_GEM_VERSION=1.1.0 -t splunk/fluent-plugin-kubernetes-objects:1.1.0-8e57fc .
